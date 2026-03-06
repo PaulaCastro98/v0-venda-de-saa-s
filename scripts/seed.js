@@ -28,9 +28,9 @@ async function seed() {
     // Seed plans
     const plansInsert = `
       INSERT INTO plans (name, price, commission, first_month_discount) VALUES
-      ('Essencial', 50.00, 10.00, 0.5),
-      ('Profissional', 90.00, 15.00, 0.5),
-      ('Empresarial', 190.00, 25.00, 0.5),
+      ('Essencial', 69.90, 10.00, 0.5),
+      ('Profissional', 149.90, 15.00, 0.5),
+      ('Empresarial', 600.00, 25.00, 0.5),
       ('Personalizado', 0.00, 0.00, 0.0)
       ON CONFLICT DO NOTHING
     `;
