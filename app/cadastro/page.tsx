@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { RegistrationForm } from "@/components/registration-form"
@@ -6,6 +7,30 @@ import { RegistrationForm } from "@/components/registration-form"
 export const metadata: Metadata = {
   title: "Cadastro - SimpleWork",
   description: "Cadastre-se e escolha o plano ideal para o seu negocio.",
+}
+
+function RegistrationFormSkeleton() {
+  return (
+    <div className="mt-10">
+      <div className="mb-10 flex items-center justify-center gap-2">
+        {[1, 2, 3].map((s) => (
+          <div key={s} className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted" />
+            {s < 3 && <div className="h-px w-12 bg-border" />}
+          </div>
+        ))}
+      </div>
+      <div className="rounded-2xl border border-border bg-card p-8">
+        <div className="h-6 w-32 bg-muted rounded" />
+        <div className="mt-4 h-4 w-64 bg-muted rounded" />
+        <div className="mt-8 space-y-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-10 bg-muted rounded" />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function CadastroPage() {
@@ -22,7 +47,9 @@ export default function CadastroPage() {
               Preencha seus dados, escolha o plano e comece a usar agora.
             </p>
           </div>
-          <RegistrationForm />
+          <Suspense fallback={<RegistrationFormSkeleton />}>
+            <RegistrationForm />
+          </Suspense>
         </div>
       </main>
       <Footer />
