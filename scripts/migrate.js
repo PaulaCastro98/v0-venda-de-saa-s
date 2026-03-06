@@ -1,11 +1,16 @@
-import { sql } from '@neondatabase/serverless';
+import { Pool } from '@neondatabase/serverless';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
 async function migrate() {
+  const client = await pool.connect();
   try {
     console.log('Starting database migration...');
 
     // Create users table
-    await sql`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
@@ -16,11 +21,11 @@ async function migrate() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `;
+    `);
     console.log('✓ Created users table');
 
     // Create affiliates table
-    await sql`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS affiliates (
         id SERIAL PRIMARY KEY,
         user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -34,11 +39,11 @@ async function migrate() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `;
+    `);
     console.log('✓ Created affiliates table');
 
     // Create products table
-    await sql`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS products (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
@@ -47,11 +52,11 @@ async function migrate() {
         category VARCHAR(100),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `;
+    `);
     console.log('✓ Created products table');
 
     // Create plans table
-    await sql`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS plans (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
@@ -60,11 +65,11 @@ async function migrate() {
         first_month_discount DECIMAL(3, 2) DEFAULT 0.5,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `;
+    `);
     console.log('✓ Created plans table');
 
     // Create leads table
-    await sql`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS leads (
         id SERIAL PRIMARY KEY,
         affiliate_id INTEGER NOT NULL REFERENCES affiliates(id) ON DELETE CASCADE,
@@ -75,11 +80,11 @@ async function migrate() {
         status VARCHAR(50) DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `;
+    `);
     console.log('✓ Created leads table');
 
     // Create clients table
-    await sql`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS clients (
         id SERIAL PRIMARY KEY,
         lead_id INTEGER UNIQUE REFERENCES leads(id) ON DELETE SET NULL,
@@ -91,11 +96,11 @@ async function migrate() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `;
+    `);
     console.log('✓ Created clients table');
 
     // Create client_billing_cycles table
-    await sql`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS client_billing_cycles (
         id SERIAL PRIMARY KEY,
         client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
@@ -107,11 +112,11 @@ async function migrate() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `;
+    `);
     console.log('✓ Created client_billing_cycles table');
 
     // Create affiliate_commissions table
-    await sql`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS affiliate_commissions (
         id SERIAL PRIMARY KEY,
         affiliate_id INTEGER NOT NULL REFERENCES affiliates(id) ON DELETE CASCADE,
@@ -122,20 +127,23 @@ async function migrate() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         paid_at TIMESTAMP
       )
-    `;
+    `);
     console.log('✓ Created affiliate_commissions table');
 
     // Create indexes
-    await sql`CREATE INDEX IF NOT EXISTS idx_affiliates_user_id ON affiliates(user_id)`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_leads_affiliate_id ON leads(affiliate_id)`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_clients_lead_id ON clients(lead_id)`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_commissions_affiliate_id ON affiliate_commissions(affiliate_id)`;
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_affiliates_user_id ON affiliates(user_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_leads_affiliate_id ON leads(affiliate_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_clients_lead_id ON clients(lead_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_commissions_affiliate_id ON affiliate_commissions(affiliate_id)`);
     console.log('✓ Created indexes');
 
     console.log('✅ Migration completed successfully!');
   } catch (error) {
     console.error('❌ Migration failed:', error);
     process.exit(1);
+  } finally {
+    client.release();
+    await pool.end();
   }
 }
 
