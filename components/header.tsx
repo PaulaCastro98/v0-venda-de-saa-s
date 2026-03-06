@@ -33,9 +33,17 @@ export function Header() {
           <Link href="/#contato" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             Contato
           </Link>
+          <Link href="/afiliados/cadastro" className="text-sm font-medium text-accent transition-colors hover:text-accent/80">
+            Programa de Afiliados
+          </Link>
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
+          <Link href="/afiliados/cadastro">
+            <Button variant="outline" size="sm">
+              Seja Afiliado
+            </Button>
+          </Link>
           <Link href="/cadastro">
             <Button variant="default" size="sm">
               Comecar agora
@@ -67,11 +75,21 @@ export function Header() {
             <Link href="/#contato" className="text-sm font-medium text-muted-foreground" onClick={() => setMobileOpen(false)}>
               Contato
             </Link>
-            <Link href="/cadastro" onClick={() => setMobileOpen(false)}>
-              <Button variant="default" size="sm" className="w-full">
-                Comecar agora
-              </Button>
+            <Link href="/afiliados/cadastro" className="text-sm font-medium text-accent" onClick={() => setMobileOpen(false)}>
+              Programa de Afiliados
             </Link>
+            <div className="flex flex-col gap-2 pt-2">
+              <Link href="/afiliados/cadastro" onClick={() => setMobileOpen(false)}>
+                <Button variant="outline" size="sm" className="w-full">
+                  Seja Afiliado
+                </Button>
+              </Link>
+              <Link href="/cadastro" onClick={() => setMobileOpen(false)}>
+                <Button variant="default" size="sm" className="w-full">
+                  Comecar agora
+                </Button>
+              </Link>
+            </div>
           </nav>
         </div>
       )}
