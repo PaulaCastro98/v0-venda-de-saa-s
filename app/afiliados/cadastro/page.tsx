@@ -22,6 +22,7 @@ export default function AffiliateRegisterPage() {
     phone: '',
     pix_key: '',
   });
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -31,6 +32,10 @@ export default function AffiliateRegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!agreedToTerms) {
+      setError('Você precisa aceitar os termos para continuar');
+      return;
+    }
     setLoading(true);
 
     try {
@@ -160,6 +165,26 @@ export default function AffiliateRegisterPage() {
                       onChange={handleChange}
                       required
                     />
+                  </div>
+
+                  <div className="flex items-start gap-2 p-3 bg-muted/50 rounded border border-border">
+                    <input
+                      type="checkbox"
+                      id="terms"
+                      checked={agreedToTerms}
+                      onChange={(e) => {
+                        setAgreedToTerms(e.target.checked);
+                        setError('');
+                      }}
+                      className="mt-1 cursor-pointer"
+                    />
+                    <label htmlFor="terms" className="text-xs text-muted-foreground cursor-pointer flex-1">
+                      Concordo com as{' '}
+                      <Link href="/legal/regras-afiliados" target="_blank" className="text-accent hover:underline font-semibold">
+                        Regras do Programa de Afiliados
+                      </Link>
+                      {' '}da SimpleWork
+                    </label>
                   </div>
 
                   <div className="space-y-2">
