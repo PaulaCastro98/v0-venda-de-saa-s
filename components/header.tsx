@@ -33,13 +33,13 @@ export function Header() {
           <Link href="/#contato" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             Contato
           </Link>
-          <Link href="/afiliados/cadastro" className="text-sm font-medium text-accent transition-colors hover:text-accent/80">
+          <Link href="/seja-afiliado" className="text-sm font-medium text-accent transition-colors hover:text-accent/80">
             Programa de Afiliados
           </Link>
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Link href="/afiliados/cadastro">
+          <Link href="/seja-afiliado">
             <Button variant="outline" size="sm">
               Seja Afiliado
             </Button>
@@ -75,11 +75,11 @@ export function Header() {
             <Link href="/#contato" className="text-sm font-medium text-muted-foreground" onClick={() => setMobileOpen(false)}>
               Contato
             </Link>
-            <Link href="/afiliados/cadastro" className="text-sm font-medium text-accent" onClick={() => setMobileOpen(false)}>
+            <Link href="/seja-afiliado" className="text-sm font-medium text-accent" onClick={() => setMobileOpen(false)}>
               Programa de Afiliados
             </Link>
             <div className="flex flex-col gap-2 pt-2">
-              <Link href="/afiliados/cadastro" onClick={() => setMobileOpen(false)}>
+              <Link href="/seja-afiliado" onClick={() => setMobileOpen(false)}>
                 <Button variant="outline" size="sm" className="w-full">
                   Seja Afiliado
                 </Button>

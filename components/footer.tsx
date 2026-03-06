@@ -23,6 +23,7 @@ export function Footer() {
               <li><Link href="/#sistemas" className="text-sm text-muted-foreground hover:text-foreground">Sistemas</Link></li>
               <li><Link href="/#planos" className="text-sm text-muted-foreground hover:text-foreground">Planos</Link></li>
               <li><Link href="/#sobre" className="text-sm text-muted-foreground hover:text-foreground">Recursos</Link></li>
+              <li><Link href="/seja-afiliado" className="text-sm text-muted-foreground hover:text-foreground">Programa de Afiliados</Link></li>
             </ul>
           </div>
 
@@ -37,6 +38,7 @@ export function Footer() {
           <div>
             <h4 className="text-sm font-semibold text-foreground">Legal</h4>
             <ul className="mt-3 flex flex-col gap-2">
+              <li><Link href="/legal" className="text-sm text-muted-foreground hover:text-foreground">Centro Legal</Link></li>
               <li><Link href="/legal/regras-afiliados" className="text-sm text-muted-foreground hover:text-foreground">Regras de Afiliados</Link></li>
               <li><Link href="#" className="text-sm text-muted-foreground hover:text-foreground">Termos de uso</Link></li>
               <li><Link href="#" className="text-sm text-muted-foreground hover:text-foreground">Privacidade</Link></li>
