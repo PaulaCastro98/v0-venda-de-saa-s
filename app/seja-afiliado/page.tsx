@@ -131,10 +131,6 @@ export default function SejaAfiliadoPage() {
                     <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
                     <span>Profissional: R$15/mês por cliente</span>
                   </li>
-                  <li className="flex gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
-                    <span>Empresarial: R$25/mês por cliente</span>
-                  </li>
                 </ul>
               </div>
 
@@ -170,7 +166,7 @@ export default function SejaAfiliadoPage() {
             </h2>
 
             <div className="bg-card rounded-2xl border border-border p-8">
-              <div className="grid md:grid-cols-3 gap-8">
+              <div className="grid md:grid-cols-2 gap-8">
                 <div className="text-center">
                   <div className="mb-4">
                     <h4 className="text-sm font-semibold text-muted-foreground mb-2">Cenário 1: Iniciante</h4>
@@ -178,70 +174,37 @@ export default function SejaAfiliadoPage() {
                   </div>
                   <div className="space-y-2 text-sm text-muted-foreground border-t border-border pt-4">
                     <div className="flex justify-between">
-                      <span>5 Essencial (R$10)</span>
-                      <span className="font-semibold text-foreground">R$50</span>
+                      <span>7 Essencial (R$10)</span>
+                      <span className="font-semibold text-foreground">R$70</span>
                     </div>
                     <div className="flex justify-between">
                       <span>3 Profissional (R$15)</span>
                       <span className="font-semibold text-foreground">R$45</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>2 Empresarial (R$25)</span>
-                      <span className="font-semibold text-foreground">R$50</span>
-                    </div>
                     <div className="border-t border-border pt-2 mt-2 flex justify-between font-bold text-foreground">
                       <span>Ganho Mensal:</span>
-                      <span className="text-accent text-lg">R$145</span>
+                      <span className="text-accent text-lg">R$115</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="text-center">
                   <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-muted-foreground mb-2">Cenário 2: Intermediário</h4>
+                    <h4 className="text-sm font-semibold text-muted-foreground mb-2">Cenário 2: Experiente</h4>
                     <div className="text-4xl font-bold text-foreground">50 Clientes</div>
                   </div>
                   <div className="space-y-2 text-sm text-muted-foreground border-t border-border pt-4">
                     <div className="flex justify-between">
-                      <span>25 Essencial (R$10)</span>
-                      <span className="font-semibold text-foreground">R$250</span>
+                      <span>30 Essencial (R$10)</span>
+                      <span className="font-semibold text-foreground">R$300</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>15 Profissional (R$15)</span>
-                      <span className="font-semibold text-foreground">R$225</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>10 Empresarial (R$25)</span>
-                      <span className="font-semibold text-foreground">R$250</span>
+                      <span>20 Profissional (R$15)</span>
+                      <span className="font-semibold text-foreground">R$300</span>
                     </div>
                     <div className="border-t border-border pt-2 mt-2 flex justify-between font-bold text-foreground">
                       <span>Ganho Mensal:</span>
-                      <span className="text-accent text-lg">R$725</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-muted-foreground mb-2">Cenário 3: Experiente</h4>
-                    <div className="text-4xl font-bold text-foreground">100+ Clientes</div>
-                  </div>
-                  <div className="space-y-2 text-sm text-muted-foreground border-t border-border pt-4">
-                    <div className="flex justify-between">
-                      <span>50 Essencial (R$10)</span>
-                      <span className="font-semibold text-foreground">R$500</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>35 Profissional (R$15)</span>
-                      <span className="font-semibold text-foreground">R$525</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>25 Empresarial (R$25)</span>
-                      <span className="font-semibold text-foreground">R$625</span>
-                    </div>
-                    <div className="border-t border-border pt-2 mt-2 flex justify-between font-bold text-foreground">
-                      <span>Ganho Mensal:</span>
-                      <span className="text-accent text-lg">R$1.650</span>
+                      <span className="text-accent text-lg">R$600</span>
                     </div>
                   </div>
                 </div>
