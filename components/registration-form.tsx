@@ -35,6 +35,7 @@ interface FormData {
   email: string
   phone: string
   company: string
+  cnpj: string
   plan: string
   sistema: string
 }
@@ -51,6 +52,7 @@ export function RegistrationForm() {
     email: "",
     phone: "",
     company: "",
+    cnpj: "",
     plan: preselectedPlan,
     sistema: preselectedSistema,
   })
@@ -72,6 +74,7 @@ export function RegistrationForm() {
       email: formData.email,
       phone: formData.phone,
       company: formData.company || undefined,
+      cnpj: formData.cnpj || undefined,
     })
 
     const fullMessage = selectedProduct
@@ -157,6 +160,24 @@ export function RegistrationForm() {
                 placeholder="Sua empresa"
                 value={formData.company}
                 onChange={(e) => updateField("company", e.target.value)}
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label htmlFor="cnpj">CNPJ da empresa (opcional)</Label>
+              <Input
+                id="cnpj"
+                placeholder="00.000.000/0000-00"
+                value={formData.cnpj}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/\D/g, "").slice(0, 14)
+                  const formatted = raw
+                    .replace(/^(\d{2})(\d)/, "$1.$2")
+                    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+                    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+                    .replace(/(\d{4})(\d)/, "$1-$2")
+                  updateField("cnpj", formatted)
+                }}
                 className="mt-1.5"
               />
             </div>
