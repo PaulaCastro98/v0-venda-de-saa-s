@@ -41,7 +41,7 @@ export function Footer() {
               <li><Link href="/legal" className="text-sm text-muted-foreground hover:text-foreground">Centro Legal</Link></li>
               <li><Link href="/legal/regras-afiliados" className="text-sm text-muted-foreground hover:text-foreground">Regras de Afiliados</Link></li>
               <li><Link href="#" className="text-sm text-muted-foreground hover:text-foreground">Termos de uso</Link></li>
-              <li><Link href="#" className="text-sm text-muted-foreground hover:text-foreground">Privacidade</Link></li>
+              <li><Link href="/legal/privacidade" className="text-sm text-muted-foreground hover:text-foreground">Privacidade</Link></li>
             </ul>
           </div>
         </div>
