@@ -41,8 +41,8 @@ export default function CommissionsPage() {
       .finally(() => setLoading(false));
   }, [router]);
 
-  const totalEarned = stats?.total_paid || 0;
-  const pendingCommissions = stats?.pending_commissions || 0;
+  const totalEarned = parseFloat(stats?.total_paid) || 0;
+  const pendingCommissions = parseFloat(stats?.pending_commissions) || 0;
 
   if (loading) {
     return (
@@ -117,7 +117,7 @@ export default function CommissionsPage() {
                         <tr key={commission.id} className="border-b border-border hover:bg-muted/50">
                           <td className="py-3 px-4 text-foreground font-medium">{commission.client_name}</td>
                           <td className="py-3 px-4 text-foreground">{commission.plan_name}</td>
-                          <td className="py-3 px-4 font-bold text-green-600">R$ {commission.commission_amount.toFixed(2)}</td>
+                          <td className="py-3 px-4 font-bold text-green-600">R$ {parseFloat(String(commission.commission_amount)).toFixed(2)}</td>
                           <td className="py-3 px-4">
                             <span
                               className={`px-3 py-1 rounded-full text-sm font-medium ${
