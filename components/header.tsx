@@ -39,7 +39,7 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Link href="/seja-afiliado">
+          <Link href="/afiliados/cadastro">
             <Button variant="outline" size="sm">
               Seja Afiliado
             </Button>
@@ -79,7 +79,7 @@ export function Header() {
               Programa de Afiliados
             </Link>
             <div className="flex flex-col gap-2 pt-2">
-              <Link href="/seja-afiliado" onClick={() => setMobileOpen(false)}>
+              <Link href="/afiliados/cadastro" onClick={() => setMobileOpen(false)}>
                 <Button variant="outline" size="sm" className="w-full">
                   Seja Afiliado
                 </Button>
