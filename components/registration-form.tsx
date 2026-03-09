@@ -13,20 +13,20 @@ const plans = [
   {
     id: "essencial",
     name: "Essencial",
-    price: "R$ 50/mes",
-    desc: "Ate 2 usuarios, suporte 24h",
+    price: "R$ 69,90/mes",
+    desc: "Ate 2 usuarios, agendamento, relatorio mensal",
   },
   {
     id: "profissional",
     name: "Profissional",
-    price: "R$ 90/mes",
-    desc: "Ate 5 usuarios, WhatsApp integrado",
+    price: "R$ 149,90/mes",
+    desc: "Ate 5 usuarios, e-mail, relatorios avancados",
   },
   {
     id: "empresarial",
     name: "Empresarial",
-    price: "R$ 190/mes",
-    desc: "10+ usuarios, completo",
+    price: "A partir de R$ 600",
+    desc: "10+ usuarios, multi-unidades, dominio proprio",
   },
 ]
 
@@ -35,6 +35,7 @@ interface FormData {
   email: string
   phone: string
   company: string
+  cnpj: string
   plan: string
   sistema: string
 }
@@ -51,6 +52,7 @@ export function RegistrationForm() {
     email: "",
     phone: "",
     company: "",
+    cnpj: "",
     plan: preselectedPlan,
     sistema: preselectedSistema,
   })
@@ -61,7 +63,7 @@ export function RegistrationForm() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const isStep1Valid = formData.name && formData.email && formData.phone
+  const isStep1Valid = formData.name && formData.email && formData.phone && formData.company && formData.cnpj
   const isStep2Valid = formData.plan
 
   const handleSubmit = () => {
@@ -72,6 +74,7 @@ export function RegistrationForm() {
       email: formData.email,
       phone: formData.phone,
       company: formData.company || undefined,
+      cnpj: formData.cnpj || undefined,
     })
 
     const fullMessage = selectedProduct
@@ -151,13 +154,33 @@ export function RegistrationForm() {
               />
             </div>
             <div>
-              <Label htmlFor="company">Nome da empresa (opcional)</Label>
+              <Label htmlFor="company">Nome da empresa</Label>
               <Input
                 id="company"
                 placeholder="Sua empresa"
                 value={formData.company}
                 onChange={(e) => updateField("company", e.target.value)}
                 className="mt-1.5"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="cnpj">CNPJ da empresa</Label>
+              <Input
+                id="cnpj"
+                placeholder="00.000.000/0000-00"
+                value={formData.cnpj}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/\D/g, "").slice(0, 14)
+                  const formatted = raw
+                    .replace(/^(\d{2})(\d)/, "$1.$2")
+                    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+                    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+                    .replace(/(\d{4})(\d)/, "$1-$2")
+                  updateField("cnpj", formatted)
+                }}
+                className="mt-1.5"
+                required
               />
             </div>
           </div>

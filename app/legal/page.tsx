@@ -25,7 +25,7 @@ export default function LegalPage() {
           <div className="grid gap-6">
             <a 
               href="/legal/regras-afiliados"
-              className="p-6 rounded-2xl border border-border bg-card hover:border-accent/50 transition-colors"
+              className="p-6 rounded-2xl border border-border bg-card hover:border-accent/50 hover:shadow-lg transition-all"
             >
               <h2 className="text-2xl font-bold text-foreground mb-2">Regras do Programa de Afiliados</h2>
               <p className="text-muted-foreground">
@@ -34,22 +34,22 @@ export default function LegalPage() {
             </a>
 
             <a 
-              href="#"
-              className="p-6 rounded-2xl border border-border bg-card opacity-50 cursor-not-allowed"
+              href="/legal/termos-de-uso"
+              className="p-6 rounded-2xl border border-border bg-card hover:border-accent/50 hover:shadow-lg transition-all"
             >
               <h2 className="text-2xl font-bold text-foreground mb-2">Termos de Uso</h2>
               <p className="text-muted-foreground">
-                Termos e condições de uso da plataforma SimpleWork
+                Termos e condições de uso da plataforma SimpleWork, direitos e responsabilidades
               </p>
             </a>
 
             <a 
-              href="#"
-              className="p-6 rounded-2xl border border-border bg-card opacity-50 cursor-not-allowed"
+              href="/legal/privacidade"
+              className="p-6 rounded-2xl border border-border bg-card hover:border-accent/50 hover:shadow-lg transition-all"
             >
               <h2 className="text-2xl font-bold text-foreground mb-2">Política de Privacidade</h2>
               <p className="text-muted-foreground">
-                Como protegemos seus dados e informações pessoais
+                Como protegemos seus dados e informações pessoais na plataforma SimpleWork
               </p>
             </a>
           </div>

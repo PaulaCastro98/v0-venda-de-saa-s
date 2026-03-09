@@ -27,21 +27,34 @@ export default function AffiliateLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
-      const response = await fetch(`/api/affiliates/profile?email=${formData.email}`);
-
-      if (!response.ok) {
-        throw new Error('Email ou senha incorretos');
-      }
+      console.log('[v0] Attempting login with email:', formData.email);
+      
+      const response = await fetch('/api/affiliates/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
 
       const data = await response.json();
+      console.log('[v0] Login response status:', response.status);
 
-      // Simple validation (in production, use proper authentication)
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao fazer login');
+      }
+
+      console.log('[v0] Login successful, saving to localStorage');
       localStorage.setItem('affiliate_email', formData.email);
-      router.push('/afiliados');
+      localStorage.setItem('affiliate_id', String(data.user.id));
+      console.log('[v0] Saved email:', localStorage.getItem('affiliate_email'));
+      console.log('[v0] Redirecting to dashboard...');
+      window.location.href = '/afiliados/dashboard';
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao fazer login');
+      const errorMsg = err instanceof Error ? err.message : 'Erro ao fazer login';
+      console.error('[v0] Login error:', errorMsg);
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
