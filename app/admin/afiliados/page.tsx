@@ -115,7 +115,7 @@ export default function AdminAffiliatesPage() {
                           <td className="py-3 px-4">
                             <Select
                               value={aff.status}
-                              onValueChange={(value) => handleStatusChange(aff.id, value)}
+                              onValueChange={(value: string) => handleStatusChange(aff.id, value)}
                             >
                               <SelectTrigger className="w-32">
                                 <SelectValue />

@@ -1,65 +1,144 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createUser, generateReferralCode, hashPassword, getUserByEmail } from '@/lib/auth';
-import { createAffiliate } from '@/lib/affiliates-db';
+// app/api/affiliates/register/route.ts
+import { NextResponse } from 'next/server';
+import { neon } from '@neondatabase/serverless';
+import { createHash } from 'crypto';
 
-export async function POST(req: NextRequest) {
+const sql = neon(process.env.DATABASE_URL!);
+
+// Função simples para hash MD5 (para desenvolvimento)
+function hashPassword(password: string): string {
+  return createHash('md5').update(password).digest('hex');
+}
+
+export async function POST(request: Request) {
   try {
-    console.log('[v0] DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
-    
-    const body = await req.json();
-    console.log('[v0] Received registration data:', { ...body, password: '***' });
-    
-    const { email, name, cpf, phone, password, pix_key } = body;
+    // Obter dados do corpo da requisição
+    const body = await request.json();
 
-    if (!email || !name || !cpf || !password || !pix_key) {
-      console.log('[v0] Missing required fields');
-      return NextResponse.json(
-        { error: 'Campos obrigatórios: email, name, cpf, password, pix_key' },
-        { status: 400 }
-      );
+    console.log('Dados recebidos:', {
+      email: body.email,
+      name: body.name,
+      cpf: body.cpf,
+      phone: body.phone,
+      pix_key: body.pix_key
+    });
+
+    // Validação básica
+    if (!body.email || !body.password || !body.name || !body.cpf || !body.phone || !body.pix_key) {
+      return NextResponse.json({ error: 'Todos os campos são obrigatórios' }, { status: 400 });
     }
 
-    // Check if user already exists
-    console.log('[v0] Checking if user exists...');
-    const existingUser = await getUserByEmail(email);
-    if (existingUser) {
-      console.log('[v0] User already exists:', email);
-      return NextResponse.json(
-        { error: 'Este email já está cadastrado' },
-        { status: 400 }
-      );
-    }
-    console.log('[v0] User does not exist, proceeding with creation');
+    // Verificar se o usuário já existe
+    const existingUser = await sql`
+      SELECT id FROM users WHERE email = ${body.email}
+    `;
 
-    const passwordHash = hashPassword(password);
-    console.log('[v0] Creating user...');
-    const user = await createUser(email, name, cpf, phone || '', passwordHash);
-    console.log('[v0] User created with ID:', user?.id);
-    
-    if (!user) {
-      throw new Error('Failed to create user');
+    if (existingUser.length > 0) {
+      return NextResponse.json({ error: 'Este email já está cadastrado' }, { status: 409 });
     }
-    
-    const referralCode = generateReferralCode();
-    console.log('[v0] Creating affiliate with code:', referralCode);
-    const affiliate = await createAffiliate(user.id, referralCode, pix_key);
-    console.log('[v0] Affiliate created with ID:', affiliate?.id);
 
-    return NextResponse.json(
-      {
-        message: 'Afiliado registrado com sucesso',
-        affiliate_id: affiliate.id,
-        referral_code: affiliate.referral_code,
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error('[v0] Error in affiliate registration:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error('[v0] Stack trace:', error instanceof Error ? error.stack : 'N/A');
-    return NextResponse.json(
-      { error: `Erro ao registrar afiliado: ${errorMessage}` },
-      { status: 500 }
-    );
+    // Verificar se o CPF já está cadastrado
+    const existingCpf = await sql`
+      SELECT id FROM affiliates WHERE cpf = ${body.cpf}
+    `;
+
+    if (existingCpf.length > 0) {
+      return NextResponse.json({ error: 'Este CPF já está cadastrado' }, { status: 409 });
+    }
+
+    // Hash da senha
+    const hashedPassword = hashPassword(body.password);
+
+    // Gerar código de referência aleatório
+    const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+    // Variável para armazenar o ID do usuário
+    let userId = null;
+
+    try {
+      // 1. Inserir na tabela users
+      const userResult = await sql`
+        INSERT INTO users (
+          name, 
+          email, 
+          password_hash,
+          created_at, 
+          updated_at
+        )
+        VALUES (
+          ${body.name}, 
+          ${body.email}, 
+          ${hashedPassword},
+          CURRENT_TIMESTAMP, 
+          CURRENT_TIMESTAMP
+        )
+        RETURNING id
+      `;
+
+      if (!userResult || userResult.length === 0) {
+        return NextResponse.json({ error: 'Falha ao criar usuário' }, { status: 500 });
+      }
+
+      userId = userResult[0].id;
+      console.log(`Usuário criado com ID: ${userId}`);
+
+      // 2. Inserir na tabela affiliates
+      const affiliateResult = await sql`
+        INSERT INTO affiliates (
+          user_id,
+          name,
+          email,
+          password,
+          full_name,
+          cpf,
+          whatsapp,
+          pix_key,
+          referral_code,
+          status,
+          created_at
+        )
+        VALUES (
+          ${userId},
+          ${body.name},
+          ${body.email},
+          ${hashedPassword},
+          ${body.name},
+          ${body.cpf},
+          ${body.phone},
+          ${body.pix_key},
+          ${referralCode},
+          'pending',
+          CURRENT_TIMESTAMP
+        )
+        RETURNING id, referral_code
+      `;
+
+      console.log(`Afiliado criado com ID: ${affiliateResult[0].id}`);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Cadastro realizado com sucesso! Seu cadastro está em análise.',
+        userId: userId,
+        affiliateId: affiliateResult[0].id,
+        referral_code: affiliateResult[0].referral_code
+      }, { status: 201 });
+    } catch (error: any) {
+      console.error('Erro na inserção:', error);
+
+      // Se o usuário foi criado mas o afiliado não, remover o usuário para manter consistência
+      if (userId) {
+        try {
+          await sql`DELETE FROM users WHERE id = ${userId}`;
+          console.log('Usuário removido após falha no registro de afiliado');
+        } catch (cleanupError) {
+          console.error('Erro ao tentar remover usuário após falha:', cleanupError);
+        }
+      }
+
+      return NextResponse.json({ error: 'Erro ao registrar afiliado: ' + error.message }, { status: 500 });
+    }
+  } catch (error: any) {
+    console.error('Erro geral:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }

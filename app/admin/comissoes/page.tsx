@@ -108,7 +108,7 @@ export default function AdminCommissionsPage() {
                           <td className="py-3 px-4">
                             <Select
                               value={comm.status}
-                              onValueChange={(value) => handleStatusChange(comm.id, value)}
+                              onValueChange={(value: string) => handleStatusChange(comm.id, value)}
                             >
                               <SelectTrigger className="w-28">
                                 <SelectValue />
