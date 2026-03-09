@@ -13,20 +13,20 @@ const plans = [
   {
     id: "essencial",
     name: "Essencial",
-    price: "R$ 50/mes",
-    desc: "Ate 2 usuarios, suporte 24h",
+    price: "R$ 69,90/mes",
+    desc: "Ate 2 usuarios, agendamento, relatorio mensal",
   },
   {
     id: "profissional",
     name: "Profissional",
-    price: "R$ 90/mes",
-    desc: "Ate 5 usuarios, WhatsApp integrado",
+    price: "R$ 149,90/mes",
+    desc: "Ate 5 usuarios, e-mail, relatorios avancados",
   },
   {
     id: "empresarial",
     name: "Empresarial",
-    price: "R$ 190/mes",
-    desc: "10+ usuarios, completo",
+    price: "A partir de R$ 600",
+    desc: "10+ usuarios, multi-unidades, dominio proprio",
   },
 ]
 
