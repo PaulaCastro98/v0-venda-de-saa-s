@@ -53,7 +53,7 @@ export default function AffiliateRegisterPage() {
 
       localStorage.setItem('affiliate_email', formData.email);
       localStorage.setItem('affiliate_referral_code', data.referral_code);
-      router.push('/afiliados/login');
+      router.push('/afiliados/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao registrar');
     } finally {

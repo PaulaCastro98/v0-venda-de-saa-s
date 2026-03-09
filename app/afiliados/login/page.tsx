@@ -39,7 +39,7 @@ export default function AffiliateLoginPage() {
 
       // Simple validation (in production, use proper authentication)
       localStorage.setItem('affiliate_email', formData.email);
-      router.push('/afiliados');
+      router.push('/afiliados/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao fazer login');
     } finally {
