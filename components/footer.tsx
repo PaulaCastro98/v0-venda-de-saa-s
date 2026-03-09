@@ -23,7 +23,7 @@ export function Footer() {
               <li><Link href="/#sistemas" className="text-sm text-muted-foreground hover:text-foreground">Sistemas</Link></li>
               <li><Link href="/#planos" className="text-sm text-muted-foreground hover:text-foreground">Planos</Link></li>
               <li><Link href="/#sobre" className="text-sm text-muted-foreground hover:text-foreground">Recursos</Link></li>
-              <li><Link href="/seja-afiliado" className="text-sm text-muted-foreground hover:text-foreground">Programa de Afiliados</Link></li>
+              <li><Link href="/afiliados" className="text-sm text-muted-foreground hover:text-foreground">Programa de Afiliados</Link></li>
             </ul>
           </div>
 
