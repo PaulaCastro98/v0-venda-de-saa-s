@@ -95,7 +95,7 @@ export default function MyLeadsPage() {
                           </td>
                           <td className="py-3 px-4 text-foreground">{lead.product_name}</td>
                           <td className="py-3 px-4 text-foreground">
-                            {lead.plan_name} - R$ {lead.price.toFixed(2)}
+                            {lead.plan_name} - R$ {parseFloat(String(lead.price)).toFixed(2)}
                           </td>
                           <td className="py-3 px-4">
                             <span
