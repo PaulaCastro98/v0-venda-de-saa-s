@@ -29,22 +29,33 @@ export default function AffiliateDashboardPage() {
 
   useEffect(() => {
     const email = localStorage.getItem('affiliate_email');
+    console.log('[v0] Dashboard: checking email in localStorage:', email);
+    
     if (!email) {
+      console.log('[v0] Dashboard: No email found, redirecting to login');
       router.push('/afiliados/login');
       return;
     }
 
     async function fetchData() {
       try {
-        const response = await fetch(`/api/affiliates/profile?email=${email}`);
-        if (!response.ok) {
-          throw new Error('Não autorizado');
-        }
+        console.log('[v0] Dashboard: Fetching profile for:', email);
+        const response = await fetch(`/api/affiliates/profile?email=${encodeURIComponent(email)}`);
+        console.log('[v0] Dashboard: Profile response status:', response.status);
+        
         const data = await response.json();
+        console.log('[v0] Dashboard: Profile data:', data);
+        
+        if (!response.ok) {
+          console.log('[v0] Dashboard: Profile error:', data.error);
+          throw new Error(data.error || 'Não autorizado');
+        }
+        
         setAffiliate(data);
       } catch (error) {
-        localStorage.removeItem('affiliate_email');
-        router.push('/afiliados/login');
+        console.error('[v0] Dashboard: Error fetching profile:', error);
+        // Não remover o email automaticamente, apenas mostrar erro
+        setLoading(false);
       } finally {
         setLoading(false);
       }
