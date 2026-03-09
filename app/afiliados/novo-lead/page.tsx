@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AffiliateSidebar } from '@/components/affiliate-sidebar';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -39,7 +40,7 @@ export default function NewLeadPage() {
   useEffect(() => {
     const email = localStorage.getItem('affiliate_email');
     if (!email) {
-      router.push('/afiliados/cadastro');
+      router.push('/afiliados/login');
       return;
     }
 
@@ -101,42 +102,7 @@ export default function NewLeadPage() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-card border-r border-border p-6">
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-foreground mb-2">SimpleWork Afiliados</h2>
-          {affiliate && <p className="text-sm text-muted-foreground truncate">{affiliate.name}</p>}
-        </div>
-
-        <nav className="space-y-2 mb-8">
-          <Link href="/afiliados">
-            <Button variant="ghost" className="w-full justify-start">
-              Dashboard
-            </Button>
-          </Link>
-          <Link href="/afiliados/meus-leads">
-            <Button variant="default" className="w-full justify-start">
-              Meus Leads
-            </Button>
-          </Link>
-          <Link href="/afiliados/comissoes">
-            <Button variant="ghost" className="w-full justify-start">
-              Comissões
-            </Button>
-          </Link>
-        </nav>
-
-        <Button
-          variant="outline"
-          className="w-full text-red-600"
-          onClick={() => {
-            localStorage.removeItem('affiliate_email');
-            router.push('/afiliados/cadastro');
-          }}
-        >
-          Sair
-        </Button>
-      </aside>
+      <AffiliateSidebar />
 
       {/* Main Content */}
       <main className="flex-1 p-8">
@@ -205,7 +171,7 @@ export default function NewLeadPage() {
                     <SelectContent>
                       {plans.map((plan) => (
                         <SelectItem key={plan.id} value={plan.id.toString()}>
-                          {plan.name} - R$ {plan.price.toFixed(2)}
+                          {plan.name} - R$ {parseFloat(String(plan.price)).toFixed(2)}
                         </SelectItem>
                       ))}
                     </SelectContent>
