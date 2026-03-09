@@ -63,7 +63,7 @@ export function RegistrationForm() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const isStep1Valid = formData.name && formData.email && formData.phone
+  const isStep1Valid = formData.name && formData.email && formData.phone && formData.company && formData.cnpj
   const isStep2Valid = formData.plan
 
   const handleSubmit = () => {
@@ -154,17 +154,18 @@ export function RegistrationForm() {
               />
             </div>
             <div>
-              <Label htmlFor="company">Nome da empresa (opcional)</Label>
+              <Label htmlFor="company">Nome da empresa</Label>
               <Input
                 id="company"
                 placeholder="Sua empresa"
                 value={formData.company}
                 onChange={(e) => updateField("company", e.target.value)}
                 className="mt-1.5"
+                required
               />
             </div>
             <div>
-              <Label htmlFor="cnpj">CNPJ da empresa (opcional)</Label>
+              <Label htmlFor="cnpj">CNPJ da empresa</Label>
               <Input
                 id="cnpj"
                 placeholder="00.000.000/0000-00"
@@ -179,6 +180,7 @@ export function RegistrationForm() {
                   updateField("cnpj", formatted)
                 }}
                 className="mt-1.5"
+                required
               />
             </div>
           </div>
