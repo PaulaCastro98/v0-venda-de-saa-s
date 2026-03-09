@@ -1,23 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createUser, generateReferralCode, hashPassword } from '@/lib/auth';
+import { createUser, generateReferralCode, hashPassword, getUserByEmail } from '@/lib/auth';
 import { createAffiliate } from '@/lib/affiliates-db';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, name, cpf, phone, password, pix_key } = await req.json();
+    const body = await req.json();
+    console.log('[v0] Received registration data:', { ...body, password: '***' });
+    
+    const { email, name, cpf, phone, password, pix_key } = body;
 
     if (!email || !name || !cpf || !password || !pix_key) {
+      console.log('[v0] Missing required fields');
       return NextResponse.json(
         { error: 'Campos obrigatórios: email, name, cpf, password, pix_key' },
         { status: 400 }
       );
     }
 
+    // Check if user already exists
+    const existingUser = await getUserByEmail(email);
+    if (existingUser) {
+      console.log('[v0] User already exists:', email);
+      return NextResponse.json(
+        { error: 'Este email já está cadastrado' },
+        { status: 400 }
+      );
+    }
+
     const passwordHash = hashPassword(password);
+    console.log('[v0] Creating user...');
     const user = await createUser(email, name, cpf, phone || '', passwordHash);
+    console.log('[v0] User created:', user.id);
     
     const referralCode = generateReferralCode();
+    console.log('[v0] Creating affiliate with code:', referralCode);
     const affiliate = await createAffiliate(user.id, referralCode, pix_key);
+    console.log('[v0] Affiliate created:', affiliate.id);
 
     return NextResponse.json(
       {
@@ -28,9 +46,10 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Erro no registro:', error);
+    console.error('[v0] Erro no registro:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return NextResponse.json(
-      { error: 'Erro ao registrar afiliado' },
+      { error: `Erro ao registrar afiliado: ${errorMessage}` },
       { status: 500 }
     );
   }

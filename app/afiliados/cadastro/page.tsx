@@ -45,13 +45,15 @@ export default function AffiliateRegisterPage() {
         body: JSON.stringify(formData),
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || 'Erro ao registrar');
       }
 
       localStorage.setItem('affiliate_email', formData.email);
-      router.push('/afiliados');
+      localStorage.setItem('affiliate_referral_code', data.referral_code);
+      router.push('/afiliados/login');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao registrar');
     } finally {
