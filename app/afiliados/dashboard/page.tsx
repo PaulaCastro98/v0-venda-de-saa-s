@@ -30,40 +30,46 @@ export default function AffiliateDashboardPage() {
   useEffect(() => {
     const email = localStorage.getItem('affiliate_email');
     console.log('[v0] Dashboard: checking email in localStorage:', email);
-    
+  
     if (!email) {
       console.log('[v0] Dashboard: No email found, redirecting to login');
       router.push('/afiliados/login');
       return;
     }
-
+  
+    // ✅ Aqui o TypeScript já sabe que email é string (não null)
+    // porque passamos pelo if acima
     async function fetchData() {
       try {
         console.log('[v0] Dashboard: Fetching profile for:', email);
-        const response = await fetch(`/api/affiliates/profile?email=${encodeURIComponent(email)}`);
+  
+        // ✅ Forçar o tipo como string
+        const response = await fetch(
+          `/api/affiliates/profile?email=${encodeURIComponent(email as string)}`
+        );
+  
         console.log('[v0] Dashboard: Profile response status:', response.status);
-        
+  
         const data = await response.json();
         console.log('[v0] Dashboard: Profile data:', data);
-        
+  
         if (!response.ok) {
           console.log('[v0] Dashboard: Profile error:', data.error);
           throw new Error(data.error || 'Não autorizado');
         }
-        
+  
         setAffiliate(data);
       } catch (error) {
         console.error('[v0] Dashboard: Error fetching profile:', error);
-        // Não remover o email automaticamente, apenas mostrar erro
         setLoading(false);
       } finally {
         setLoading(false);
       }
     }
-
+  
     fetchData();
   }, [router]);
-
+  
   const handleLogout = () => {
     localStorage.removeItem('affiliate_email');
     router.push('/afiliados/login');

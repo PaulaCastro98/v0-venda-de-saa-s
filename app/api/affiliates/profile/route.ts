@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAffiliateByUserId } from '@/lib/affiliates-db';
+import { getAffiliateByUserId, getAffiliateStats } from '@/lib/affiliates-db';
 import { getUserByEmail } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -35,6 +35,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // ✅ Buscar stats em tempo real
+    console.log('[v0] Fetching real-time stats for affiliate:', affiliate.id);
+    const stats = await getAffiliateStats(affiliate.id);
+
     console.log('[v0] Profile found, returning data');
     return NextResponse.json(
       {
@@ -44,9 +48,11 @@ export async function GET(req: NextRequest) {
         referral_code: affiliate.referral_code,
         pix_key: affiliate.pix_key,
         status: affiliate.status,
-        total_earned: affiliate.total_earned,
-        total_leads: affiliate.total_leads,
-        total_clients: affiliate.total_clients,
+        // ✅ Dados calculados em tempo real
+        total_earned: stats?.total_paid ?? 0,
+        total_leads: stats?.total_leads ?? 0,
+        total_clients: stats?.converted_leads ?? 0,
+        pending_commissions: stats?.pending_commissions ?? 0,
       },
       { status: 200 }
     );
