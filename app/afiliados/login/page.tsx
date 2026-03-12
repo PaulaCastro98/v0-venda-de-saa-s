@@ -45,10 +45,12 @@ export default function AffiliateLoginPage() {
         throw new Error(data.error || 'Erro ao fazer login');
       }
 
-      console.log('[v0] Login successful, redirecting to dashboard');
+      console.log('[v0] Login successful, saving to localStorage');
       localStorage.setItem('affiliate_email', formData.email);
-      localStorage.setItem('affiliate_id', data.user.id);
-      router.push('/afiliados/dashboard');
+      localStorage.setItem('affiliate_id', String(data.user.id));
+      console.log('[v0] Saved email:', localStorage.getItem('affiliate_email'));
+      console.log('[v0] Redirecting to dashboard...');
+      window.location.href = '/afiliados/dashboard';
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Erro ao fazer login';
       console.error('[v0] Login error:', errorMsg);

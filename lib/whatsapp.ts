@@ -5,11 +5,12 @@ export function getWhatsAppLink(message: string): string {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`
 }
 
-export function buildPlanMessage(plan: string, userData?: { name: string; email: string; phone: string; company?: string }) {
+export function buildPlanMessage(plan: string, userData?: { name: string; email: string; phone: string; company?: string; cnpj?: string }) {
   let msg = `Ola! Tenho interesse no plano *${plan}* da SimpleWork.`
   if (userData) {
     msg += `\n\nMeus dados:\nNome: ${userData.name}\nEmail: ${userData.email}\nTelefone: ${userData.phone}`
     if (userData.company) msg += `\nEmpresa: ${userData.company}`
+    if (userData.cnpj) msg += `\nCNPJ: ${userData.cnpj}`
   }
   return msg
 }

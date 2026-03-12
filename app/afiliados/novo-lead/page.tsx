@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AffiliateSidebar } from '@/components/affiliate-sidebar';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle, MessageCircle, X } from 'lucide-react';
+import { getWhatsAppLink } from '@/lib/whatsapp';
 
 interface Product {
   id: number;
@@ -21,6 +23,15 @@ interface Plan {
   price: number;
 }
 
+interface CreatedLead {
+  id: number;
+  client_name: string;
+  client_email: string;
+  product_name: string;
+  plan_name: string;
+  plan_price: number;
+}
+
 export default function NewLeadPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -28,6 +39,8 @@ export default function NewLeadPage() {
   const [affiliate, setAffiliate] = useState<any>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdLead, setCreatedLead] = useState<CreatedLead | null>(null);
 
   const [formData, setFormData] = useState({
     client_name: '',
@@ -39,7 +52,7 @@ export default function NewLeadPage() {
   useEffect(() => {
     const email = localStorage.getItem('affiliate_email');
     if (!email) {
-      router.push('/afiliados/cadastro');
+      router.push('/afiliados/login');
       return;
     }
 
@@ -74,7 +87,12 @@ export default function NewLeadPage() {
     if (!affiliate) return;
 
     setLoading(true);
+    setError('');
+    
     try {
+      const selectedProduct = products.find(p => p.id.toString() === formData.product_id);
+      const selectedPlan = plans.find(p => p.id.toString() === formData.plan_id);
+      
       const response = await fetch('/api/affiliates/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -87,11 +105,30 @@ export default function NewLeadPage() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Erro ao criar lead');
+        throw new Error(data.error || 'Erro ao criar lead');
       }
 
-      router.push('/afiliados/meus-leads');
+      // Mostrar modal de sucesso
+      setCreatedLead({
+        id: data.lead.id,
+        client_name: formData.client_name,
+        client_email: formData.client_email,
+        product_name: selectedProduct?.name || '',
+        plan_name: selectedPlan?.name || '',
+        plan_price: selectedPlan?.price || 0,
+      });
+      setShowSuccessModal(true);
+      
+      // Limpar formulário
+      setFormData({
+        client_name: '',
+        client_email: '',
+        product_id: '',
+        plan_id: '',
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar lead');
     } finally {
@@ -99,44 +136,35 @@ export default function NewLeadPage() {
     }
   };
 
+  const buildLeadWhatsAppMessage = () => {
+    if (!createdLead || !affiliate) return '';
+    return `Olá! Sou ${affiliate.name}, afiliado SimpleWork (código: ${affiliate.referral_code}).
+
+Tenho uma indicação para vocês!
+
+*Dados do Lead:*
+- Nome: ${createdLead.client_name}
+- Email: ${createdLead.client_email}
+- Produto: ${createdLead.product_name}
+- Plano: ${createdLead.plan_name} (R$ ${parseFloat(String(createdLead.plan_price)).toFixed(2)}/mês)
+
+Aguardo confirmação da conversão!`;
+  };
+
+  const handleSendWhatsApp = () => {
+    const message = buildLeadWhatsAppMessage();
+    const whatsappUrl = getWhatsAppLink(message);
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleCloseModal = () => {
+    setShowSuccessModal(false);
+    setCreatedLead(null);
+  };
+
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-card border-r border-border p-6">
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-foreground mb-2">SimpleWork Afiliados</h2>
-          {affiliate && <p className="text-sm text-muted-foreground truncate">{affiliate.name}</p>}
-        </div>
-
-        <nav className="space-y-2 mb-8">
-          <Link href="/afiliados">
-            <Button variant="ghost" className="w-full justify-start">
-              Dashboard
-            </Button>
-          </Link>
-          <Link href="/afiliados/meus-leads">
-            <Button variant="default" className="w-full justify-start">
-              Meus Leads
-            </Button>
-          </Link>
-          <Link href="/afiliados/comissoes">
-            <Button variant="ghost" className="w-full justify-start">
-              Comissões
-            </Button>
-          </Link>
-        </nav>
-
-        <Button
-          variant="outline"
-          className="w-full text-red-600"
-          onClick={() => {
-            localStorage.removeItem('affiliate_email');
-            router.push('/afiliados/cadastro');
-          }}
-        >
-          Sair
-        </Button>
-      </aside>
+      <AffiliateSidebar />
 
       {/* Main Content */}
       <main className="flex-1 p-8">
@@ -205,7 +233,7 @@ export default function NewLeadPage() {
                     <SelectContent>
                       {plans.map((plan) => (
                         <SelectItem key={plan.id} value={plan.id.toString()}>
-                          {plan.name} - R$ {plan.price.toFixed(2)}
+                          {plan.name} - R$ {parseFloat(String(plan.price)).toFixed(2)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -222,6 +250,75 @@ export default function NewLeadPage() {
           </Card>
         </div>
       </main>
+
+      {/* Modal de Sucesso */}
+      {showSuccessModal && createdLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-card rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 relative">
+            <button
+              onClick={handleCloseModal}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">Lead Adicionado!</h3>
+              <p className="text-muted-foreground mt-2">Seu lead foi cadastrado com sucesso.</p>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 mb-6 text-sm">
+              <div className="flex justify-between mb-2">
+                <span className="text-muted-foreground">Cliente:</span>
+                <span className="font-medium text-foreground">{createdLead.client_name}</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-muted-foreground">Email:</span>
+                <span className="font-medium text-foreground">{createdLead.client_email}</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-muted-foreground">Produto:</span>
+                <span className="font-medium text-foreground">{createdLead.product_name}</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-muted-foreground">Plano:</span>
+                <span className="font-medium text-foreground">{createdLead.plan_name}</span>
+              </div>
+              <div className="flex justify-between border-t border-border pt-2 mt-2">
+                <span className="text-muted-foreground">Status:</span>
+                <span className="font-semibold text-amber-600">Aguardando Aprovacao</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Button
+                onClick={handleSendWhatsApp}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Enviar para WhatsApp
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => router.push('/afiliados/meus-leads')}
+                className="w-full"
+              >
+                Ver Meus Leads
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleCloseModal}
+                className="w-full"
+              >
+                Adicionar Outro Lead
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
