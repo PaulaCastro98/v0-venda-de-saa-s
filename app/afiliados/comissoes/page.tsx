@@ -1,8 +1,9 @@
+// app/afiliados/comissoes/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';   
 import { AffiliateSidebar } from '@/components/affiliate-sidebar';
 
 interface Commission {
@@ -14,10 +15,15 @@ interface Commission {
   plan_name: string;
 }
 
+interface AffiliateStats {
+  total_paid: number;
+  pending_commissions: number;
+}
+
 export default function CommissionsPage() {
   const router = useRouter();
   const [commissions, setCommissions] = useState<Commission[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<AffiliateStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,27 +33,63 @@ export default function CommissionsPage() {
       return;
     }
 
-    fetch(`/api/affiliates/profile?email=${email}`)
-      .then((res) => res.json())
-      .then((data) => {
-        return fetch(`/api/affiliates/commissions?affiliate_id=${data.id}`);
-      })
-      .then((res) => res.json())
-      .then((data) => {
-        setCommissions(data.commissions || []);
-        setStats(data.stats);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    async function fetchAffiliateData() {
+      try {
+        // Primeiro, busca o perfil do afiliado para obter o ID
+        // ✅ Corrigido: Garante que email é string antes de encodeURIComponent
+        const profileRes = await fetch(`/api/affiliates/profile?email=${encodeURIComponent(email as string)}`);
+        const profileData = await profileRes.json();
+
+        if (!profileRes.ok || !profileData.id) {
+          console.error('Erro ao buscar perfil do afiliado:', profileData.error);
+          router.push('/afiliados/login'); // Redireciona se não conseguir o ID
+          return;
+        }
+
+        const affiliateId = profileData.id;
+
+        // Em seguida, busca as comissões e stats usando o ID do afiliado
+        const commissionsRes = await fetch(`/api/affiliates/commissions?affiliate_id=${affiliateId}`);       
+        const commissionsData = await commissionsRes.json();
+
+        if (!commissionsRes.ok) {
+          console.error('Erro ao buscar comissões:', commissionsData.error);
+          setCommissions([]);
+          setStats({ total_paid: 0, pending_commissions: 0 });
+          return;
+        }
+
+        setCommissions(
+          (commissionsData.commissions || []).map((comm: any) => ({
+            ...comm,
+            commission_amount: parseFloat(String(comm.commission_amount || 0)),
+          }))
+        );
+        setStats({
+          total_paid: parseFloat(String(commissionsData.stats?.total_paid || 0)),
+          pending_commissions: parseFloat(String(commissionsData.stats?.pending_commissions || 0)),
+        });
+
+      } catch (error) {
+        console.error('Erro geral ao buscar dados do afiliado:', error);
+        router.push('/afiliados/login'); // Redireciona em caso de erro grave
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchAffiliateData();
   }, [router]);
 
-  const totalEarned = parseFloat(stats?.total_paid) || 0;
-  const pendingCommissions = parseFloat(stats?.pending_commissions) || 0;
+  const totalEarned = stats?.total_paid || 0;
+  const pendingCommissions = stats?.pending_commissions || 0;
+  const totalGeral = totalEarned + pendingCommissions;
+
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Carregando...</div>
+        <div className="animate-pulse text-muted-foreground">Carregando...</div>   
       </div>
     );
   }
@@ -67,7 +109,7 @@ export default function CommissionsPage() {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total Recebido</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">R$ {totalEarned.toFixed(2)}</div>
+                <div className="text-3xl font-bold text-green-600">R$ {totalEarned.toFixed(2).replace('.', ',')}</div>
               </CardContent>
             </Card>
 
@@ -76,7 +118,7 @@ export default function CommissionsPage() {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Pendente</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-accent">R$ {pendingCommissions.toFixed(2)}</div>
+                <div className="text-3xl font-bold text-yellow-600">R$ {pendingCommissions.toFixed(2).replace('.', ',')}</div>
               </CardContent>
             </Card>
 
@@ -85,7 +127,7 @@ export default function CommissionsPage() {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total Geral</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-foreground">R$ {(totalEarned + pendingCommissions).toFixed(2)}</div>
+                <div className="text-3xl font-bold text-blue-600">R$ {totalGeral.toFixed(2).replace('.', ',')}</div>
               </CardContent>
             </Card>
           </div>
@@ -117,19 +159,27 @@ export default function CommissionsPage() {
                         <tr key={commission.id} className="border-b border-border hover:bg-muted/50">
                           <td className="py-3 px-4 text-foreground font-medium">{commission.client_name}</td>
                           <td className="py-3 px-4 text-foreground">{commission.plan_name}</td>
-                          <td className="py-3 px-4 font-bold text-green-600">R$ {parseFloat(String(commission.commission_amount)).toFixed(2)}</td>
+                          <td className="py-3 px-4 font-bold text-green-600">R$ {commission.commission_amount.toFixed(2).replace('.', ',')}</td>
                           <td className="py-3 px-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                commission.status === 'paid'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}
-                            >
-                              {commission.status === 'paid' ? 'Pago' : 'Pendente'}
-                            </span>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            commission.status === 'paid'
+                              ? 'bg-green-100 text-green-800'
+                              : commission.status === 'approved'
+                              ? 'bg-blue-100 text-blue-800'
+                              : commission.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {commission.status === 'paid'
+                              ? '✅ Pago'
+                              : commission.status === 'approved'
+                              ? '⏳ Aprovado'
+                              : commission.status === 'pending'
+                              ? '⏳ Pendente'
+                              : '🚫 Rejeitado'}
+                          </span>
                           </td>
-                          <td className="py-3 px-4 text-muted-foreground text-sm">
+                          <td className="py-3 px-4 text-muted-foreground text-sm"> 
                             {new Date(commission.created_at).toLocaleDateString('pt-BR')}
                           </td>
                         </tr>

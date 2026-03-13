@@ -1,3 +1,4 @@
+// app/admin/afiliados/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -17,44 +18,74 @@ interface Affiliate {
   total_earned: number;
   total_leads: number;
   total_clients: number;
+  blocked_reason: string | null;
 }
 
 export default function AdminAffiliatesPage() {
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedAff, setSelectedAff] = useState<Affiliate | null>(null);
+  const [showBlockReasonInput, setShowBlockReasonInput] = useState<number | null>(null); // ID do afiliado para mostrar input
   const [blockReason, setBlockReason] = useState('');
 
   useEffect(() => {
-    fetch('/api/admin/affiliates')
-      .then((res) => res.json())
-      .then((data) => {
-        setAffiliates(data.affiliates || []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
+    fetchAffiliates();
   }, []);
 
-  const handleStatusChange = async (affiliateId: number, newStatus: string) => {
+  const fetchAffiliates = async () => {
     try {
-      await fetch('/api/admin/affiliates', {
+      const res = await fetch('/api/admin/affiliates');
+      const data = await res.json();
+      setAffiliates(
+        (data.affiliates || []).map((aff: any) => ({
+          ...aff,
+          total_earned: parseFloat(String(aff.total_earned || 0)), // Garante que é número
+        }))
+      );
+    } catch (err) {
+      console.error('Erro ao buscar afiliados:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (affiliateId: number, newStatus: string, reason: string | null = null) => {
+    try {
+      const response = await fetch('/api/admin/affiliates', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: affiliateId,
           status: newStatus,
-          blocked_reason: newStatus === 'blocked' ? blockReason : null,
+          blocked_reason: newStatus === 'blocked' ? reason : null,
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Falha ao atualizar afiliado no servidor.');
+      }
+
+      const data = await response.json();
+      const updatedAffiliateFromServer = data.affiliate; // ✅ Pega o afiliado atualizado do servidor
+
       setAffiliates((prev) =>
-        prev.map((aff) => (aff.id === affiliateId ? { ...aff, status: newStatus } : aff))
+        prev.map((aff) =>
+          aff.id === affiliateId
+            ? {
+                ...aff,
+                status: updatedAffiliateFromServer.status, // ✅ Usa o status do servidor
+                blocked_reason: updatedAffiliateFromServer.blocked_reason, // ✅ Usa o motivo do servidor
+                total_earned: parseFloat(String(updatedAffiliateFromServer.total_earned || 0)),
+              }
+            : aff
+        )
       );
+      // Limpa o estado do input de bloqueio
+      setBlockReason('');
+      setShowBlockReasonInput(null);
     } catch (error) {
       console.error('Erro ao atualizar afiliado:', error);
+      alert(`Ocorreu um erro ao atualizar o afiliado: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -101,6 +132,7 @@ export default function AdminAffiliatesPage() {
                         <th className="text-left py-3 px-4 font-medium text-foreground">Clientes</th>
                         <th className="text-left py-3 px-4 font-medium text-foreground">Ganhos</th>
                         <th className="text-left py-3 px-4 font-medium text-foreground">Status</th>
+                        <th className="text-left py-3 px-4 font-medium text-foreground">Ações</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -111,20 +143,75 @@ export default function AdminAffiliatesPage() {
                           <td className="py-3 px-4 text-muted-foreground font-mono">{aff.referral_code}</td>
                           <td className="py-3 px-4 text-foreground">{aff.total_leads}</td>
                           <td className="py-3 px-4 text-foreground">{aff.total_clients}</td>
-                          <td className="py-3 px-4 text-green-600 font-bold">R$ {aff.total_earned.toFixed(2)}</td>
+                          <td className="py-3 px-4 text-green-600 font-bold">
+                            R$ {aff.total_earned.toFixed(2).replace('.', ',')}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              aff.status === 'active'
+                                ? 'bg-green-100 text-green-800'
+                                : aff.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : aff.status === 'blocked'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-gray-100 text-gray-800' // Fallback
+                            }`}>
+                              {aff.status === 'active' ? '✅ Ativo'
+                                : aff.status === 'pending' ? '⏳ Pendente'
+                                : aff.status === 'blocked' ? '🚫 Bloqueado'
+                                : 'Desconhecido'}
+                            </span>
+                          </td>
                           <td className="py-3 px-4">
                             <Select
                               value={aff.status}
-                              onValueChange={(value: string) => handleStatusChange(aff.id, value)}
+                              onValueChange={(value: string) => {
+                                if (value === 'blocked') {
+                                  setShowBlockReasonInput(aff.id); // Mostra o input para este afiliado
+                                } else {
+                                  handleStatusChange(aff.id, value);
+                                }
+                              }}
                             >
                               <SelectTrigger className="w-32">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
+                                <SelectItem value="pending">Pendente</SelectItem>
                                 <SelectItem value="active">Ativo</SelectItem>
                                 <SelectItem value="blocked">Bloqueado</SelectItem>
                               </SelectContent>
                             </Select>
+                            {/* Input para o motivo de bloqueio, exibido condicionalmente */}
+                            {showBlockReasonInput === aff.id && (
+                              <div className="mt-2 flex gap-2">
+                                <Input
+                                  type="text"
+                                  placeholder="Motivo do bloqueio"
+                                  value={blockReason}
+                                  onChange={(e) => setBlockReason(e.target.value)}
+                                  className="flex-1"
+                                />
+                                <Button
+                                  onClick={() => {
+                                    if (blockReason.trim()) {
+                                      handleStatusChange(aff.id, 'blocked', blockReason);
+                                    } else {
+                                      alert('Por favor, insira um motivo para bloquear.');
+                                    }
+                                  }}
+                                >
+                                  Bloquear
+                                </Button>
+                                <Button variant="outline" onClick={() => setShowBlockReasonInput(null)}>
+                                  Cancelar
+                                </Button>
+                              </div>
+                            )}
+                            {/* Exibe o motivo do bloqueio se houver e o status for bloqueado */}
+                            {aff.status === 'blocked' && aff.blocked_reason && (
+                              <p className="text-xs text-red-500 mt-1">Motivo: {aff.blocked_reason}</p>
+                            )}
                           </td>
                         </tr>
                       ))}

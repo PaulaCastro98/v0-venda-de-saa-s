@@ -23,8 +23,14 @@ export default function AdminDashboard() {
         const affiliates = data.affiliates || [];
         setStats({
           total_affiliates: affiliates.length,
-          total_leads: affiliates.reduce((sum: number, a: any) => sum + a.total_leads, 0),
-          total_commissions: affiliates.reduce((sum: number, a: any) => sum + a.total_earned, 0),
+          total_leads: affiliates.reduce(
+            (sum: number, a: any) => sum + (parseInt(a.total_leads) || 0),
+            0
+          ),
+          total_commissions: affiliates.reduce(
+            (sum: number, a: any) => sum + (parseFloat(a.total_earned) || 0),
+            0
+          ),
           pending_commissions: 0,
         });
       })
@@ -44,6 +50,7 @@ export default function AdminDashboard() {
 
       <main className="p-6">
         <div className="max-w-7xl mx-auto">
+
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <Card>
@@ -54,7 +61,9 @@ export default function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-foreground">{stats?.total_affiliates || 0}</div>
+                <div className="text-3xl font-bold text-foreground">
+                  {stats?.total_affiliates || 0}
+                </div>
               </CardContent>
             </Card>
 
@@ -66,7 +75,9 @@ export default function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-foreground">{stats?.total_leads || 0}</div>
+                <div className="text-3xl font-bold text-foreground">
+                  {stats?.total_leads || 0}
+                </div>
               </CardContent>
             </Card>
 
@@ -78,7 +89,9 @@ export default function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">R$ {(stats?.total_commissions || 0).toFixed(2)}</div>
+                <div className="text-3xl font-bold text-green-600">
+                  R$ {parseFloat(String(stats?.total_commissions || 0)).toFixed(2)}
+                </div>
               </CardContent>
             </Card>
 
@@ -90,7 +103,9 @@ export default function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-accent">R$ {(stats?.pending_commissions || 0).toFixed(2)}</div>
+                <div className="text-3xl font-bold text-yellow-600">
+                  R$ {parseFloat(String(stats?.pending_commissions || 0)).toFixed(2)}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -106,7 +121,9 @@ export default function AdminDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">Visualize e bloqueie afiliados</p>
+                  <p className="text-sm text-muted-foreground">
+                    Visualize e bloqueie afiliados
+                  </p>
                 </CardContent>
               </Card>
             </Link>
@@ -120,7 +137,9 @@ export default function AdminDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">Acompanhe conversões</p>
+                  <p className="text-sm text-muted-foreground">
+                    Acompanhe conversões
+                  </p>
                 </CardContent>
               </Card>
             </Link>
@@ -134,11 +153,14 @@ export default function AdminDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">Marque como pagas</p>
+                  <p className="text-sm text-muted-foreground">
+                    Marque como pagas
+                  </p>
                 </CardContent>
               </Card>
             </Link>
           </div>
+
         </div>
       </main>
     </div>

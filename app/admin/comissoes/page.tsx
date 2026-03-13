@@ -1,4 +1,8 @@
+// app/admin/comissoes/page.tsx
 'use client';
+
+// ✅ ADICIONE ESTA LINHA AQUI, NO TOPO DO ARQUIVO, ANTES DOS IMPORTS OU DA INTERFACE
+export const dynamic = 'force-dynamic'; 
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -10,11 +14,13 @@ import { ArrowLeft } from 'lucide-react';
 interface Commission {
   id: number;
   affiliate_name: string;
+  affiliate_email: string;
   client_name: string;
   plan_name: string;
   commission_amount: number;
   status: string;
   created_at: string;
+  paid_at: string | null; // Garante que paid_at pode ser null
 }
 
 export default function AdminCommissionsPage() {
@@ -22,21 +28,30 @@ export default function AdminCommissionsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/admin/commissions')
-      .then((res) => res.json())
-      .then((data) => {
-        setCommissions(data.commissions || []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
+    fetchCommissions();
   }, []);
+
+  const fetchCommissions = async () => {
+    try {
+      const res = await fetch('/api/admin/commissions');
+      const data = await res.json();
+      // Garante que commission_amount é um número ao carregar
+      setCommissions(
+        (data.commissions || []).map((comm: any) => ({
+          ...comm,
+          commission_amount: parseFloat(String(comm.commission_amount || 0)),
+        }))
+      );
+    } catch (err) {
+      console.error('Erro ao buscar comissões:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleStatusChange = async (commissionId: number, newStatus: string) => {
     try {
-      await fetch('/api/admin/commissions', {
+      const response = await fetch('/api/admin/commissions', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -45,11 +60,30 @@ export default function AdminCommissionsPage() {
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Falha ao atualizar comissão no servidor.');
+      }
+
+      const data = await response.json();
+      const updatedCommissionFromServer = data.commission; // ✅ Pega a comissão atualizada do servidor
+
       setCommissions((prev) =>
-        prev.map((comm) => (comm.id === commissionId ? { ...comm, status: newStatus } : comm))
+        prev.map((comm) =>
+          comm.id === commissionId
+            ? {
+                ...comm,
+                status: updatedCommissionFromServer.status, // ✅ Usa o status do servidor
+                paid_at: updatedCommissionFromServer.paid_at, // ✅ Usa o paid_at do servidor
+                // Garante que commission_amount continua sendo número
+                commission_amount: parseFloat(String(updatedCommissionFromServer.commission_amount || 0)),
+              }
+            : comm
+        )
       );
     } catch (error) {
       console.error('Erro ao atualizar comissão:', error);
+      alert(`Ocorreu um erro ao atualizar a comissão: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -80,7 +114,7 @@ export default function AdminCommissionsPage() {
             <CardContent>
               {commissions.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">Nenhuma comissão registrada</p>
+                  <p className="text-muted-foreground">Nenhuma comissão registrada ainda</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -91,17 +125,22 @@ export default function AdminCommissionsPage() {
                         <th className="text-left py-3 px-4 font-medium text-foreground">Cliente</th>
                         <th className="text-left py-3 px-4 font-medium text-foreground">Plano</th>
                         <th className="text-left py-3 px-4 font-medium text-foreground">Valor</th>
-                        <th className="text-left py-3 px-4 font-medium text-foreground">Data</th>
+                        <th className="text-left py-3 px-4 font-medium text-foreground">Data Criação</th>
                         <th className="text-left py-3 px-4 font-medium text-foreground">Status</th>
+                        <th className="text-left py-3 px-4 font-medium text-foreground">Data Pagamento</th>
                       </tr>
                     </thead>
                     <tbody>
                       {commissions.map((comm) => (
                         <tr key={comm.id} className="border-b border-border hover:bg-muted/50">
-                          <td className="py-3 px-4 font-medium text-foreground">{comm.affiliate_name}</td>
+                          <td className="py-3 px-4 font-medium text-foreground">
+                            {comm.affiliate_name} ({comm.affiliate_email})
+                          </td>
                           <td className="py-3 px-4 text-foreground">{comm.client_name}</td>
                           <td className="py-3 px-4 text-foreground">{comm.plan_name}</td>
-                          <td className="py-3 px-4 font-bold text-green-600">R$ {comm.commission_amount.toFixed(2)}</td>
+                          <td className="py-3 px-4 font-bold text-green-600">
+                            R$ {comm.commission_amount.toFixed(2).replace('.', ',')}
+                          </td>
                           <td className="py-3 px-4 text-muted-foreground text-sm">
                             {new Date(comm.created_at).toLocaleDateString('pt-BR')}
                           </td>
@@ -110,14 +149,19 @@ export default function AdminCommissionsPage() {
                               value={comm.status}
                               onValueChange={(value: string) => handleStatusChange(comm.id, value)}
                             >
-                              <SelectTrigger className="w-28">
+                              <SelectTrigger className="w-32">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="pending">Pendente</SelectItem>
+                                <SelectItem value="approved">Aprovado</SelectItem>
                                 <SelectItem value="paid">Pago</SelectItem>
+                                <SelectItem value="rejected">Rejeitado</SelectItem>
                               </SelectContent>
                             </Select>
+                          </td>
+                          <td className="py-3 px-4 text-muted-foreground text-sm">
+                            {comm.paid_at ? new Date(comm.paid_at).toLocaleDateString('pt-BR') : '—'}
                           </td>
                         </tr>
                       ))}

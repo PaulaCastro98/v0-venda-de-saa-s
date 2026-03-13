@@ -1,3 +1,4 @@
+// app/admin/leads/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -9,13 +10,19 @@ import { ArrowLeft } from 'lucide-react';
 
 interface Lead {
   id: number;
-  client_name: string;
-  client_email: string;
-  product_name: string;
-  plan_name: string;
+  affiliate_id: number;
+  company_name: string | null;
+  cnpj: string | null;
+  client_name: string | null; // Mapeado de contact_name
+  client_email: string | null; // Mapeado de contact_email
+  contact_whatsapp: string | null;
+  product_id: number;
+  product_name: string; // Adicionado para exibição
+  plan_id: number;
+  plan_name: string; // Adicionado para exibição
   status: string;
   created_at: string;
-  affiliate_id: number;
+  updated_at: string;
 }
 
 export default function AdminLeadsPage() {
@@ -23,35 +30,28 @@ export default function AdminLeadsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch all affiliates first to get their leads
-    fetch('/api/admin/affiliates')
-      .then((res) => res.json())
-      .then((data) => {
-        const affiliates = data.affiliates || [];
-        const allLeads: Lead[] = [];
-
-        // For each affiliate, fetch their leads
-        Promise.all(
-          affiliates.map((aff: any) =>
-            fetch(`/api/admin/leads?affiliate_id=${aff.id}`)
-              .then((res) => res.json())
-              .then((data) => {
-                allLeads.push(...(data.leads || []));
-              })
-          )
-        )
-          .then(() => {
-            setLeads(allLeads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
-            setLoading(false);
-          })
-          .catch(() => setLoading(false));
-      })
-      .catch(() => setLoading(false));
+    fetchLeads();
   }, []);
+
+  const fetchLeads = async () => {
+    try {
+      // ✅ Busca todos os leads diretamente da API de leads, sem precisar de afiliados primeiro
+      const res = await fetch('/api/admin/leads');
+      if (!res.ok) {
+        throw new Error('Falha ao buscar leads.');
+      }
+      const data = await res.json();
+      setLeads(data.leads || []);
+    } catch (err) {
+      console.error('Erro ao buscar leads:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleStatusChange = async (leadId: number, newStatus: string) => {
     try {
-      await fetch('/api/admin/leads', {
+      const response = await fetch('/api/admin/leads', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -60,11 +60,24 @@ export default function AdminLeadsPage() {
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Falha ao atualizar lead no servidor.');
+      }
+
+      const data = await response.json();
+      const updatedLeadFromServer = data.lead; // ✅ Pega o lead atualizado do servidor
+
       setLeads((prev) =>
-        prev.map((lead) => (lead.id === leadId ? { ...lead, status: newStatus } : lead))
+        prev.map((lead) =>
+          lead.id === leadId
+            ? { ...lead, status: updatedLeadFromServer.status, updated_at: updatedLeadFromServer.updated_at }
+            : lead
+        )
       );
     } catch (error) {
       console.error('Erro ao atualizar lead:', error);
+      alert(`Ocorreu um erro ao atualizar o lead: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -113,7 +126,7 @@ export default function AdminLeadsPage() {
                     <tbody>
                       {leads.map((lead) => (
                         <tr key={lead.id} className="border-b border-border hover:bg-muted/50">
-                          <td className="py-3 px-4 font-medium text-foreground">{lead.client_name}</td>
+                          <td className="py-3 px-4 font-medium text-foreground">{lead.client_name || lead.company_name}</td>
                           <td className="py-3 px-4 text-foreground">{lead.client_email}</td>
                           <td className="py-3 px-4 text-foreground">{lead.product_name}</td>
                           <td className="py-3 px-4 text-foreground">{lead.plan_name}</td>

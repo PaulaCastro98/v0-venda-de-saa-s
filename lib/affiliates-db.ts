@@ -276,20 +276,24 @@ export async function getCommissionsByAffiliateId(affiliateId: number) {
     const result = await query(
       `SELECT 
         ac.*,
-        l.client_name,
-        l.client_email,
-        pl.name as plan_name
+        c.contact_name  as client_name,
+        c.contact_email as client_email,
+        c.status        as client_status,
+        pl.name         as plan_name,
+        pl.price        as plan_price
        FROM affiliate_commissions ac
-       LEFT JOIN leads l  ON ac.client_id        = l.id
-       LEFT JOIN plans pl ON l.plan_id            = pl.id
+       LEFT JOIN clients c ON ac.client_id = c.id
+       LEFT JOIN plans  pl ON c.plan_id    = pl.id
        WHERE ac.affiliate_id = $1
        ORDER BY ac.created_at DESC`,
       [affiliateId]
     );
     return result.rows as (Commission & {
-      plan_name: string;
       client_name: string;
       client_email: string;
+      client_status: string;
+      plan_name: string;
+      plan_price: number;
     })[];
   } catch (error) {
     console.error('[DB] Erro ao buscar comissões:', error);
@@ -304,18 +308,32 @@ export async function getCommissionsByAffiliateId(affiliateId: number) {
 export async function getAffiliateStats(affiliateId: number) {
   try {
     const result = await query(
-      `SELECT 
-        COUNT(DISTINCT l.id) as total_leads,
-        COUNT(DISTINCT CASE WHEN l.status = 'approved' THEN l.id END) as converted_leads,
-        COALESCE(SUM(CASE WHEN ac.status = 'paid'    THEN ac.commission_amount ELSE 0 END), 0) as total_paid,
-        COALESCE(SUM(CASE WHEN ac.status = 'pending' THEN ac.commission_amount ELSE 0 END), 0) as pending_commissions
-       FROM affiliates a
-       LEFT JOIN leads l               ON a.id = l.affiliate_id
-       LEFT JOIN affiliate_commissions ac ON a.id = ac.affiliate_id
-       WHERE a.id = $1
-       GROUP BY a.id`,
+      `SELECT
+        -- Total de leads
+        (SELECT COUNT(*) FROM leads WHERE affiliate_id = $1) as total_leads,
+
+        -- Leads convertidos (aprovados)
+        (SELECT COUNT(*) FROM leads WHERE affiliate_id = $1 AND status = 'approved') as converted_leads,
+
+        -- Comissões pagas
+        COALESCE(
+          SUM(CASE WHEN status = 'paid' THEN commission_amount ELSE 0 END), 0
+        ) as total_paid,
+
+        -- ✅ Comissões pendentes E aprovadas (aguardando pagamento)
+        COALESCE(
+          SUM(CASE WHEN status IN ('pending', 'approved') THEN commission_amount ELSE 0 END), 0
+        ) as pending_commissions,
+
+        -- Total geral
+        COALESCE(SUM(commission_amount), 0) as total_earned
+
+       FROM affiliate_commissions
+       WHERE affiliate_id = $1`,
       [affiliateId]
     );
+
+    console.log('[DB] Stats:', result.rows[0]);
     return result.rows[0];
   } catch (error) {
     console.error('[DB] Erro ao buscar stats:', error);

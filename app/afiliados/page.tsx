@@ -1,244 +1,329 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AffiliateSidebar } from '@/components/affiliate-sidebar';
+import { Users, DollarSign, TrendingUp, Copy, Check, Plus, LogOut } from 'lucide-react';
 import Link from 'next/link';
-import { Percent, Users, TrendingUp, Zap } from 'lucide-react';
 
-export default function AffiliatesPage() {
+interface AffiliateData {
+  id: number;
+  user_id: number;
+  referral_code: string;
+  pix_key: string;
+  status: string;
+  total_earned: number; // ✅ MUDADO PARA NUMBER
+  total_leads: number;
+  total_clients: number;
+  name: string;
+  email: string;
+  pending_commissions: number; // ✅ ADICIONADO
+}
+
+export default function AffiliateDashboardPage() {
+  const router = useRouter();
+  const [affiliate, setAffiliate] = useState<AffiliateData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const email = localStorage.getItem('affiliate_email');
+    console.log('[v0] Dashboard: checking email in localStorage:', email);
+
+    if (!email) {
+      console.log('[v0] Dashboard: No email found, redirecting to login');
+      router.push('/afiliados/login');
+      return;
+    }
+
+    async function fetchData() {
+      try {
+        console.log('[v0] Dashboard: Fetching profile for:', email);
+
+        const response = await fetch(
+          `/api/affiliates/profile?email=${encodeURIComponent(email as string)}`
+        );
+
+        console.log('[v0] Dashboard: Profile response status:', response.status);
+
+        const data = await response.json();
+        console.log('[v0] Dashboard: Profile data:', data);
+
+        if (!response.ok) {
+          console.log('[v0] Dashboard: Profile error:', data.error);
+          throw new Error(data.error || 'Não autorizado');
+        }
+
+        // ✅ Garante que total_earned e pending_commissions são números
+        setAffiliate({
+          ...data,
+          total_earned: parseFloat(String(data.total_earned || 0)),
+          pending_commissions: parseFloat(String(data.pending_commissions || 0)),
+        });
+      } catch (error) {
+        console.error('[v0] Dashboard: Error fetching profile:', error);
+        // Se houver erro, pode ser que o token expirou ou o afiliado não existe mais
+        // Redirecionar para login pode ser uma boa estratégia
+        localStorage.removeItem('affiliate_email');
+        router.push('/afiliados/login');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('affiliate_email');
+    router.push('/afiliados/login');
+  };
+
+  const copyReferralCode = () => {
+    if (affiliate?.referral_code) {
+      navigator.clipboard.writeText(affiliate.referral_code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Carregando...</div>
+      </div>
+    );
+  }
+
+  if (!affiliate) {
+    return null; // Ou uma mensagem de erro/redirecionamento
+  }
+
+  // ✅ Calcula o Total Geral
+  const totalGeral = (affiliate.total_earned + affiliate.pending_commissions);
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-accent/10 to-background border-b border-border p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <Link href="/">
-              <Button variant="ghost">← Voltar</Button>
-            </Link>
-          </div>
-          <div className="text-center py-8">
-            <h1 className="text-4xl font-bold text-foreground mb-4">Programa de Afiliados SimpleWork</h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Ganhe comissões por cada cliente que você indicar. Quanto mais você recomenda, mais você ganha.
-            </p>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background flex">
+      <AffiliateSidebar />
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        {/* CTA Section */}
-        <div className="mb-16">
-          <div className="bg-card border border-border rounded-lg p-8 text-center">
-            <h2 className="text-2xl font-bold text-foreground mb-4">Comece a Ganhar Agora</h2>
-            <p className="text-muted-foreground mb-6">
-              Registre-se como afiliado e comece a indicar nossos sistemas para seu público.
-            </p>
-            <div className="flex gap-4 justify-center flex-wrap">
-              <Link href="/afiliados/cadastro">
-                <Button className="bg-accent hover:bg-accent/90 px-8">Registrar como Afiliado</Button>
-              </Link>
-              <Link href="/afiliados/login">
-                <Button variant="outline" className="px-8">Já tenho conta</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* How It Works */}
-        <section className="mb-16">
-          <h2 className="text-3xl font-bold text-foreground mb-8 text-center">Como Funciona</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader className="text-center">
-                <Zap className="w-12 h-12 text-accent mx-auto mb-4" />
-                <CardTitle>1. Registre-se</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center text-muted-foreground">
-                Cadastre-se como afiliado em menos de 2 minutos. Preencha seus dados básicos e chave PIX.
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="text-center">
-                <Users className="w-12 h-12 text-accent mx-auto mb-4" />
-                <CardTitle>2. Compartilhe</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center text-muted-foreground">
-                Compartilhe seu código de referência com seus contatos, redes sociais ou blog.
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="text-center">
-                <TrendingUp className="w-12 h-12 text-accent mx-auto mb-4" />
-                <CardTitle>3. Ganhe Comissões</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center text-muted-foreground">
-                Receba R$ 10-15 por cada cliente que você indicar e contrate um de nossos planos.
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* Benefits */}
-        <section className="mb-16">
-          <h2 className="text-3xl font-bold text-foreground mb-8 text-center">Benefícios Exclusivos</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <Percent className="w-6 h-6 text-accent mb-2" />
-                <CardTitle>Comissões Competitivas</CardTitle>
-              </CardHeader>
-              <CardContent className="text-muted-foreground">
-                Ganhe R$ 10 por cliente no plano Essencial, R$ 15 nos outros planos, totalizando até R$ 180 por ano por cliente.
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <Zap className="w-6 h-6 text-accent mb-2" />
-                <CardTitle>Desconto para Referidos</CardTitle>
-              </CardHeader>
-              <CardContent className="text-muted-foreground">
-                Seus clientes indicados recebem 50% de desconto no primeiro mês, tornando a conversão mais fácil.
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <Users className="w-6 h-6 text-accent mb-2" />
-                <CardTitle>Painel Intuitivo</CardTitle>
-              </CardHeader>
-              <CardContent className="text-muted-foreground">
-                Acompanhe seus leads, clientes e comissões em tempo real através de um painel fácil de usar.
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <TrendingUp className="w-6 h-6 text-accent mb-2" />
-                <CardTitle>Pagamentos via PIX</CardTitle>
-              </CardHeader>
-              <CardContent className="text-muted-foreground">
-                Receba suas comissões diretamente em sua conta bancária via PIX instantaneamente.
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* Commission Table */}
-        <section className="mb-16">
-          <h2 className="text-3xl font-bold text-foreground mb-8 text-center">Tabela de Comissões</h2>
-          <Card>
-            <CardContent className="p-6">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-medium text-foreground">Plano</th>
-                      <th className="text-left py-3 px-4 font-medium text-foreground">Valor Mensal</th>
-                      <th className="text-left py-3 px-4 font-medium text-foreground">Comissão (1ª conversão)</th>
-                      <th className="text-left py-3 px-4 font-medium text-foreground">Ganho Anual (1 cliente)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-border">
-                      <td className="py-3 px-4 text-foreground font-medium">Essencial</td>
-                      <td className="py-3 px-4 text-foreground">R$ 50</td>
-                      <td className="py-3 px-4 text-accent font-bold">R$ 10</td>
-                      <td className="py-3 px-4 text-green-600 font-bold">R$ 120</td>
-                    </tr>
-                    <tr className="border-b border-border">
-                      <td className="py-3 px-4 text-foreground font-medium">Profissional</td>
-                      <td className="py-3 px-4 text-foreground">R$ 90</td>
-                      <td className="py-3 px-4 text-accent font-bold">R$ 15</td>
-                      <td className="py-3 px-4 text-green-600 font-bold">R$ 180</td>
-                    </tr>
-                    <tr className="border-b border-border">
-                      <td className="py-3 px-4 text-foreground font-medium">Empresarial</td>
-                      <td className="py-3 px-4 text-foreground">R$ 190</td>
-                      <td className="py-3 px-4 text-accent font-bold">R$ 15</td>
-                      <td className="py-3 px-4 text-green-600 font-bold">R$ 180</td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 px-4 text-foreground font-medium">Personalizado</td>
-                      <td className="py-3 px-4 text-foreground">Sob demanda</td>
-                      <td className="py-3 px-4 text-accent font-bold">Negociável</td>
-                      <td className="py-3 px-4 text-green-600 font-bold">Negociável</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-sm text-muted-foreground mt-4">
-                * Comissão paga uma única vez quando o cliente faz a conversão. Clientes indicados recebem 50% de desconto no primeiro mês.
+      <main className="flex-1 p-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Olá, {affiliate.name?.split(' ')[0]}!
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Bem-vindo ao seu painel de afiliado
               </p>
+            </div>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
+          </div>
+
+          {/* Referral Code Card */}
+          <Card className="mb-8 border-accent/20 bg-accent/5">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Seu código de indicação</p>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl font-bold text-foreground tracking-wider">
+                      {affiliate.referral_code}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copyReferralCode}
+                      className="gap-2"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-4 h-4 text-green-600" />
+                          Copiado!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          Copiar
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <Link href="/afiliados/novo-lead">
+                  <Button className="bg-accent hover:bg-accent/90 gap-2">
+                    <Plus className="w-4 h-4" />
+                    Indicar Cliente
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
-        </section>
 
-        {/* FAQ */}
-        <section className="mb-16">
-          <h2 className="text-3xl font-bold text-foreground mb-8 text-center">Perguntas Frequentes</h2>
-          <div className="space-y-4">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"> {/* ✅ Mudei para 4 colunas */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Como recebo as comissões?</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total de Leads
+                </CardTitle>
+                <Users className="w-5 h-5 text-accent" />
               </CardHeader>
-              <CardContent className="text-muted-foreground">
-                As comissões são pagas via PIX instantaneamente assim que o cliente faz sua primeira compra. Você pode acompanhar tudo no seu painel.
+              <CardContent>
+                <div className="text-3xl font-bold text-foreground">
+                  {affiliate.total_leads || 0}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Clientes indicados
+                </p>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Existe limite de clientes que posso indicar?</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Clientes Ativos
+                </CardTitle>
+                <TrendingUp className="w-5 h-5 text-accent" />
               </CardHeader>
-              <CardContent className="text-muted-foreground">
-                Não! Você pode indicar quantos clientes quiser. Quanto mais você indicar, mais você ganha.
+              <CardContent>
+                <div className="text-3xl font-bold text-foreground">
+                  {affiliate.total_clients || 0}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Que assinaram um plano
+                </p>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Posso usar meu código em redes sociais?</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total Recebido
+                </CardTitle>
+                <DollarSign className="w-5 h-5 text-green-600" /> {/* ✅ Cor do ícone */}
               </CardHeader>
-              <CardContent className="text-muted-foreground">
-                Sim, totalmente! Você pode compartilhar seu código em Instagram, Facebook, LinkedIn, blog, YouTube ou qualquer outro canal.
+              <CardContent>
+                <div className="text-3xl font-bold text-green-600">
+                  R$ {affiliate.total_earned.toFixed(2).replace('.', ',')} {/* ✅ toFixed direto */}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Em comissões pagas
+                </p>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Existe alguma taxa de inscrição?</CardTitle>
+            <Card> {/* ✅ NOVO CARD: Pendente */}
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Pendente
+                </CardTitle>
+                <DollarSign className="w-5 h-5 text-yellow-600" /> {/* ✅ Cor do ícone */}
               </CardHeader>
-              <CardContent className="text-muted-foreground">
-                Não, é totalmente gratuito! Você só ganha quando seus clientes fazem a conversão.
+              <CardContent>
+                <div className="text-3xl font-bold text-yellow-600">
+                  R$ {affiliate.pending_commissions.toFixed(2).replace('.', ',')}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Comissões a receber
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="md:col-span-4"> {/* ✅ NOVO CARD: Total Geral, ocupando todas as colunas */}
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total Geral
+                </CardTitle>
+                <DollarSign className="w-5 h-5 text-blue-600" /> {/* ✅ Cor do ícone */}
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-blue-600">
+                  R$ {totalGeral.toFixed(2).replace('.', ',')}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Total de comissões (recebidas + pendentes)
+                </p>
               </CardContent>
             </Card>
           </div>
-        </section>
 
-        {/* Final CTA */}
-        <div className="bg-gradient-to-r from-accent/5 to-accent/10 border border-accent/20 rounded-lg p-8 text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Pronto para começar?</h2>
-          <p className="text-muted-foreground mb-6">
-            Junte-se a centenas de afiliados que já estão ganhando com SimpleWork
-          </p>
-          <Link href="/afiliados/cadastro">
-            <Button className="bg-accent hover:bg-accent/90 px-8 py-6 text-base">
-              Registre-se Gratuitamente Agora
-            </Button>
-          </Link>
+          {/* Quick Actions */}
+          <h2 className="text-xl font-semibold text-foreground mb-4">Ações Rápidas</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link href="/afiliados/novo-lead">
+              <Card className="cursor-pointer hover:border-accent/50 transition-colors">
+                <CardContent className="p-6 text-center">
+                  <Plus className="w-8 h-8 text-accent mx-auto mb-3" />
+                  <h3 className="font-semibold text-foreground">Novo Lead</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Indicar um novo cliente
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/afiliados/meus-leads">
+              <Card className="cursor-pointer hover:border-accent/50 transition-colors">
+                <CardContent className="p-6 text-center">
+                  <Users className="w-8 h-8 text-accent mx-auto mb-3" />
+                  <h3 className="font-semibold text-foreground">Meus Leads</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Ver todos os leads
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/afiliados/comissoes">
+              <Card className="cursor-pointer hover:border-accent/50 transition-colors">
+                <CardContent className="p-6 text-center">
+                  <DollarSign className="w-8 h-8 text-accent mx-auto mb-3" />
+                  <h3 className="font-semibold text-foreground">Comissões</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Ver histórico de ganhos
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+
+          {/* Status Card */}
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="text-lg">Informações da Conta</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Email:</span>
+                  <span className="ml-2 text-foreground">{affiliate.email}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Chave PIX:</span>
+                  <span className="ml-2 text-foreground">{affiliate.pix_key}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${
+                    affiliate.status === 'active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {affiliate.status === 'active' ? 'Ativo' : 'Bloqueado'}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border mt-16 py-8 bg-card">
-        <div className="max-w-7xl mx-auto px-6 text-center text-muted-foreground">
-          <p>&copy; 2026 SimpleWork. Todos os direitos reservados.</p>
-        </div>
-      </footer>
     </div>
   );
 }
